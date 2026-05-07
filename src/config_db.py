@@ -7,6 +7,7 @@ class Settings(BaseSettings):
     DB_PASS: str
     DB_PORT: str
     DB_USER: str
+    SECRET_KEY: str
     MODE: str = "DEV"
 
     @property

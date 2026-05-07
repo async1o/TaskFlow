@@ -28,6 +28,11 @@ app.add_middleware(
 )
 
 
+@app.get("/health")
+async def health_check():
+    return {"status": "healthy"}
+
+
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
