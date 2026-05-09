@@ -30,11 +30,20 @@ jobs:
           --health-interval 5s
           --health-timeout 3s
           --health-retries 5
+        ports:
+          - 5432:5432
     steps:
       - uses: actions/checkout@v6
       - uses: astral-sh/setup-uv@v5
       - name: Install deps
         run: uv sync --frozen --no-install-project
+      - name: Wait for PostgreSQL
+        run: |
+          for i in $(seq 1 30); do
+            pg_isready -h localhost -p 5432 && echo "PostgreSQL ready" && break
+            echo "Waiting for PostgreSQL... ($i)"
+            sleep 2
+          done
       - name: Test
         run: uv run pytest -v
 
