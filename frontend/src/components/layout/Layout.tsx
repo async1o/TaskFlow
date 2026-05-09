@@ -7,9 +7,9 @@ interface LayoutProps {
 
 export function Layout({ children }: LayoutProps) {
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-amber-50">
       <Navbar />
-      <main>{children}</main>
+      <main className="animate-fade-in">{children}</main>
     </div>
   )
 }

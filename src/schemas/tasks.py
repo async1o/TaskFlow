@@ -13,6 +13,9 @@ class TasksSchema(BaseModel):
     creator_id: int
     creator_name: str
     creator_avatar: str | None = None
+    assignee_id: int | None = None
+    assignee_name: str | None = None
+    assignee_avatar: str | None = None
     created_at: datetime
     updated_at: datetime
 
@@ -22,6 +25,7 @@ class TasksSchema(BaseModel):
 class TasksAddSchema(BaseModel):
     label: str
     text: str
+    assignee_id: int | None = None
 
 
 class TasksCompleteSchema(BaseModel):

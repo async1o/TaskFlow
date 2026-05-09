@@ -3,12 +3,15 @@ from typing import List
 from fastapi import APIRouter, HTTPException, Depends, Query
 from sqlalchemy.exc import IntegrityError
 
-from schemas.users import UserAddSchema, UserSchema, UserLoginSchema, TokenSchema
+from fastapi import UploadFile, File
+
+from schemas.users import UserAddSchema, UserUpdateSchema, UserSchema, UserLoginSchema, TokenSchema
 from services.users import UserServices
 from repositories.users import UserRepositories
 from utils.exceptions import EntityNotFoundError
 from utils.dependencies import get_current_user
 from utils.jwt_handler import TokenData
+from utils.file_handler import save_avatar
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -58,10 +61,20 @@ async def login(data: UserLoginSchema) -> TokenSchema:
         raise HTTPException(status_code=401, detail=str(exc)) from exc
 
 
+@router.post("/avatar", response_model=UserSchema)
+async def upload_avatar(
+    file: UploadFile = File(...),
+    current_user: TokenData = Depends(get_current_user),
+) -> UserSchema:
+    avatar_url = await save_avatar(file)
+    res = await UserServices(UserRepositories).upload_avatar(current_user.user_id, avatar_url)
+    return res
+
+
 @router.put("", response_model=UserSchema)
 async def update_user(
     user_id: int,
-    data: UserAddSchema,
+    data: UserUpdateSchema,
     current_user: TokenData = Depends(get_current_user),
 ) -> UserSchema:
     if current_user.user_id != user_id:

@@ -20,4 +20,11 @@ export const usersApi = {
   delete: async (id: number): Promise<void> => {
     await api.delete('/users', { params: { user_id: id } })
   },
+
+  uploadAvatar: async (file: File): Promise<User> => {
+    const formData = new FormData()
+    formData.append('file', file)
+    const response = await api.post<User>('/users/avatar', formData)
+    return response.data
+  },
 }

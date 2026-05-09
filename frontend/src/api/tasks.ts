@@ -22,6 +22,11 @@ export const tasksApi = {
     return response.data
   },
 
+  complete: async (id: number, status = 'completed'): Promise<Task> => {
+    const response = await api.patch<Task>(`/tasks/${id}/complete`, { status })
+    return response.data
+  },
+
   delete: async (id: number): Promise<void> => {
     await api.delete('/tasks', { params: { task_id: id } })
   },

@@ -1,35 +1,30 @@
-import { Routes, Route, useParams, Link } from 'react-router-dom'
+import { Routes, Route, useParams, useNavigate } from 'react-router-dom'
 import { LoginPage } from './pages/LoginPage'
 import { RegisterPage } from './pages/RegisterPage'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { Layout } from './components/layout'
+import { AppLayout } from './components/layout/AppLayout'
+import { TaskSidebar } from './components/layout/TaskSidebar'
+import { TaskPanel } from './components/layout/TaskPanel'
 import { TasksPage } from './pages/TasksPage'
+import { WelcomePage } from './pages/WelcomePage'
 import { CreateTaskPage } from './pages/CreateTaskPage'
 import { TaskDetailPage } from './pages/TaskDetailPage'
 import { ProfilePage } from './pages/ProfilePage'
+import { CorpsPage } from './pages/CorpsPage'
+import { CorpDetailPage } from './pages/CorpDetailPage'
+import { NotificationsPage } from './pages/NotificationsPage'
+import { useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
+import type { Task } from './types'
 
-function Dashboard() {
-  return (
-    <div className="p-4 md:p-8">
-      <h1 className="text-2xl font-bold mb-6">Dashboard</h1>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <Link
-          to="/tasks"
-          className="bg-white p-6 rounded-lg shadow border hover:border-blue-500 block"
-        >
-          <h2 className="text-xl font-semibold">Tasks</h2>
-          <p className="text-gray-600">Manage your tasks</p>
-        </Link>
-        <Link
-          to="/profile"
-          className="bg-white p-6 rounded-lg shadow border hover:border-blue-500 block"
-        >
-          <h2 className="text-xl font-semibold">Profile</h2>
-          <p className="text-gray-600">View and edit your profile</p>
-        </Link>
-      </div>
-    </div>
-  )
+function TaskPanelWrapper() {
+  const { id } = useParams<{ id: string }>()
+  const queryClient = useQueryClient()
+  const handleTaskUpdate = () => {
+    queryClient.invalidateQueries({ queryKey: ['tasks'] })
+  }
+  return <TaskPanel taskId={Number(id)} onTaskUpdate={handleTaskUpdate} />
 }
 
 function TaskDetailPageWrapper() {
@@ -38,6 +33,15 @@ function TaskDetailPageWrapper() {
 }
 
 export default function App() {
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null)
+  const navigate = useNavigate()
+  const queryClient = useQueryClient()
+
+  const handleSelectTask = (task: Task) => {
+    setSelectedTask(task)
+    navigate(`/tasks/${task.task_id}`)
+  }
+
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
@@ -53,12 +57,50 @@ export default function App() {
         }
       />
       <Route
-        path="/tasks"
+        path="/corps"
         element={
           <ProtectedRoute>
             <Layout>
-              <TasksPage />
+              <CorpsPage />
             </Layout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/notifications"
+        element={
+          <ProtectedRoute>
+            <Layout>
+              <NotificationsPage />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/corps/:id"
+        element={
+          <ProtectedRoute>
+            <Layout>
+              <CorpDetailPage />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/tasks"
+        element={
+          <ProtectedRoute>
+            <AppLayout
+              sidebar={
+                <TaskSidebar
+                  selectedTaskId={selectedTask?.task_id ?? null}
+                  onSelectTask={handleSelectTask}
+                  refetchTasks={() => queryClient.invalidateQueries({ queryKey: ['tasks'] })}
+                />
+              }
+            >
+              <TasksPage />
+            </AppLayout>
           </ProtectedRoute>
         }
       />
@@ -73,7 +115,7 @@ export default function App() {
         }
       />
       <Route
-        path="/tasks/:id"
+        path="/tasks/:id/edit"
         element={
           <ProtectedRoute>
             <Layout>
@@ -83,11 +125,21 @@ export default function App() {
         }
       />
       <Route
+        path="/tasks/:id"
+        element={
+          <ProtectedRoute>
+            <Layout>
+              <TaskPanelWrapper />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/"
         element={
           <ProtectedRoute>
             <Layout>
-              <Dashboard />
+              <WelcomePage />
             </Layout>
           </ProtectedRoute>
         }

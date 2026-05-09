@@ -10,7 +10,7 @@ RUN apt update && apt install -y --no-install-recommends build-essential libpq-d
 
 RUN uv sync --frozen --no-install-project
 
-# Копируем код бота
 COPY src/ ./src/
+COPY static/ ./static/
 
 CMD ["uv", "run", "python", "src/main.py"]

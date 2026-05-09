@@ -1,35 +1,57 @@
 name: Check
+
 on:
   push:
-    branches:
-      - "main"
+    branches: ["main"]
+
 jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v6
-      - name: Install the latest version of uv
-        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b
+      - uses: actions/checkout@v6
+      - uses: astral-sh/setup-uv@v5
       - name: Install deps
-        run:  uv sync --frozen --no-install-project
+        run: uv sync --frozen --no-install-project
       - name: Lint
-        run: uv run ruff check --fix
+        run: uv run ruff check src/
+
   test:
     needs: [lint]
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: 125364
+          POSTGRES_DB: test_gh_actions_db
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 5
     steps:
-      - name: Checkout
-        uses: actions/checkout@v6
-      - name: Setup DB
-        uses: harmon758/postgresql-action@v1
-        with:
-          postgresql version: '16-alpine'
-          postgresql user: 'postgres'
-          postgresql password: ${{ secrets.DB_PASS }}
-      - name: Install the latest version of uv
-        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b
+      - uses: actions/checkout@v6
+      - uses: astral-sh/setup-uv@v5
       - name: Install deps
-        run:  uv sync --frozen --no-install-project
+        run: uv sync --frozen --no-install-project
       - name: Test
         run: uv run pytest -v
+
+  frontend:
+    needs: [lint]
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install
+        run: npm ci
+      - name: Build
+        run: npm run build

@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from typing import Any
 from sqlalchemy import select, insert, delete, update, desc
 
 from db.db import async_session_maker
@@ -26,9 +27,8 @@ class AbstractRepositories(ABC):
     async def delete_one(self, entity_id: int):
         raise NotImplementedError
 
-    @abstractmethod
-    async def find_by_email(self, email: str):
-        raise NotImplementedError
+    async def find_by_email(self, email: str) -> Any:
+        raise NotImplementedError("This model does not support email lookup")
 
 
 class SQLAlchemyRepositories(AbstractRepositories):

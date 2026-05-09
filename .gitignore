@@ -1,6 +1,11 @@
 .env
 __pycache__/
-.pyc
+*.pyc
 .venv
 .idea/
 .ruff_cache
+.pytest_cache
+
+# frontend
+frontend/node_modules/
+frontend/dist/

@@ -4,10 +4,11 @@ from fastapi import APIRouter, HTTPException, Depends, Query
 from sqlalchemy.exc import IntegrityError
 
 from schemas.tasks import TasksSchema, TasksAddSchema, TasksCompleteSchema
+from schemas.users import UserSchema
 from services.tasks import TasksServices
 from repositories.tasks import TasksRepositories
 from utils.exceptions import EntityNotFoundError
-from utils.dependencies import get_current_user
+from utils.dependencies import get_current_user, get_current_user_full
 from utils.jwt_handler import TokenData
 
 router = APIRouter(prefix="/tasks", tags=["tasks"])
@@ -18,9 +19,9 @@ async def get_all_tasks(
     limit: int = Query(default=100, le=1000),
     offset: int = Query(default=0, ge=0),
     status_filter: str | None = Query(default=None, alias="status"),
-    _current_user: TokenData = Depends(get_current_user),
+    current_user: TokenData = Depends(get_current_user),
 ) -> List[TasksSchema]:
-    res = await TasksServices(TasksRepositories).get_all_tasks(limit=limit, offset=offset, status_filter=status_filter)
+    res = await TasksServices(TasksRepositories).get_all_tasks(limit=limit, offset=offset, status_filter=status_filter, user_id=current_user.user_id)
     return res
 
 
@@ -36,10 +37,10 @@ async def get_current_task(
 @router.post("", response_model=int)
 async def add_task(
     data: TasksAddSchema,
-    current_user: TokenData = Depends(get_current_user),
+    current_user: UserSchema = Depends(get_current_user_full),
 ) -> int:
     try:
-        task_id = await TasksServices(TasksRepositories).add_task(current_user.user_id, data)
+        task_id = await TasksServices(TasksRepositories).add_task(current_user.user_id, data, current_user.username)
         return task_id
     except IntegrityError as exc:
         raise HTTPException(status_code=400, detail="Invalid task payload") from exc
@@ -49,13 +50,13 @@ async def add_task(
 async def update_task(
     task_id: int,
     data: TasksAddSchema,
-    current_user: TokenData = Depends(get_current_user),
+    current_user: UserSchema = Depends(get_current_user_full),
 ) -> TasksSchema:
     try:
         task = await TasksServices(TasksRepositories).get_current_task(task_id)
         if task.owner_id != current_user.user_id:
             raise HTTPException(status_code=403, detail="Not authorized to modify this task")
-        model = await TasksServices(TasksRepositories).update_task(task_id, data)
+        model = await TasksServices(TasksRepositories).update_task(task_id, data, current_user.username)
         return model
     except EntityNotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
@@ -69,8 +70,8 @@ async def complete_task(
 ) -> TasksSchema:
     try:
         task = await TasksServices(TasksRepositories).get_current_task(task_id)
-        if task.owner_id != current_user.user_id:
-            raise HTTPException(status_code=403, detail="Only task owner can complete this task")
+        if task.owner_id != current_user.user_id and task.assignee_id != current_user.user_id:
+            raise HTTPException(status_code=403, detail="Only task owner or assignee can complete this task")
         model = await TasksServices(TasksRepositories).complete_task(task_id, data.status)
         return model
     except EntityNotFoundError as exc:

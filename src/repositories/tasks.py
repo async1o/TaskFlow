@@ -1,26 +1,32 @@
 from utils.repositories import SQLAlchemyRepositories
 from models.tasks import TasksModel
 from sqlalchemy import select, update
-from sqlalchemy.orm import joinedload, selectinload
+from sqlalchemy.orm import joinedload
 from db.db import async_session_maker
 
 
 class TasksRepositories(SQLAlchemyRepositories):
     model = TasksModel
 
-    async def find_all(self, limit: int = 100, offset: int = 0, status_filter: str | None = None):
+    async def find_all(self, limit: int = 100, offset: int = 0, status_filter: str | None = None, user_id: int | None = None):
         async with async_session_maker() as session:
             stmt = (
                 select(self.model)
                 .options(
                     joinedload(self.model.owner),
-                    joinedload(self.model.creator)
+                    joinedload(self.model.creator),
+                    joinedload(self.model.assignee)
                 )
                 .order_by(self.model.updated_at.desc(), self.model.created_at.desc())
             )
 
             if status_filter:
                 stmt = stmt.where(self.model.status == status_filter)
+
+            if user_id is not None:
+                stmt = stmt.where(
+                    (self.model.owner_id == user_id) | (self.model.assignee_id == user_id)
+                )
 
             stmt = stmt.limit(limit).offset(offset)
             models = await session.execute(stmt)
@@ -33,7 +39,8 @@ class TasksRepositories(SQLAlchemyRepositories):
                 select(self.model)
                 .options(
                     joinedload(self.model.owner),
-                    joinedload(self.model.creator)
+                    joinedload(self.model.creator),
+                    joinedload(self.model.assignee)
                 )
                 .where(self.model.id == entity_id)
             )
@@ -63,7 +70,8 @@ class TasksRepositories(SQLAlchemyRepositories):
                 select(self.model)
                 .options(
                     joinedload(self.model.owner),
-                    joinedload(self.model.creator)
+                    joinedload(self.model.creator),
+                    joinedload(self.model.assignee)
                 )
                 .where(self.model.id == entity_id)
             )

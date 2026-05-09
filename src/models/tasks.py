@@ -18,6 +18,7 @@ class TasksModel(Base):
     status: Mapped[str] = mapped_column(String(20), default="active")
     owner_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
     creator_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    assignee_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         default=lambda: datetime.now(timezone.utc)
@@ -31,6 +32,7 @@ class TasksModel(Base):
 
     owner: Mapped["UsersModel"] = relationship("UsersModel", back_populates="tasks", foreign_keys=[owner_id])
     creator: Mapped["UsersModel"] = relationship("UsersModel", foreign_keys=[creator_id])
+    assignee: Mapped["UsersModel | None"] = relationship("UsersModel", foreign_keys=[assignee_id])
 
     def to_read_model(self) -> TasksSchema:
         return TasksSchema(
@@ -44,5 +46,8 @@ class TasksModel(Base):
             creator_id=self.creator_id,
             creator_name=self.creator.username if self.creator else "",
             creator_avatar=self.creator.avatar_url if self.creator else None,
+            assignee_id=self.assignee_id,
+            assignee_name=self.assignee.username if self.assignee else None,
+            assignee_avatar=self.assignee.avatar_url if self.assignee else None,
             created_at=self.created_at,
             updated_at=self.updated_at)

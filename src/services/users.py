@@ -1,7 +1,7 @@
 from typing import Dict, List
 
 from utils.repositories import AbstractRepositories
-from schemas.users import UserAddSchema, UserSchema, UserLoginSchema, TokenSchema
+from schemas.users import UserAddSchema, UserUpdateSchema, UserSchema, UserLoginSchema, TokenSchema
 from utils.auth import hash_password, verify_password
 from utils.jwt_handler import create_access_token
 
@@ -24,15 +24,21 @@ class UserServices:
         res = await self.users_repo.add_one(data_dict)
         return res
 
-    async def update_user(self, user_id: int, data: UserAddSchema) -> UserSchema:
-        data_dict = data.model_dump()
-        data_dict["password"] = hash_password(data_dict["password"])
+    async def update_user(self, user_id: int, data: UserUpdateSchema) -> UserSchema:
+        data_dict = {k: v for k, v in data.model_dump().items() if v is not None}
+        if "password" in data_dict:
+            data_dict["password"] = hash_password(data_dict["password"])
         res = await self.users_repo.update_one(user_id, data_dict)
         return res
 
     async def delete_user(self, user_id: int) -> Dict:
         await self.users_repo.delete_one(user_id)
         return {"message": "User deleted"}
+
+    async def upload_avatar(self, user_id: int, avatar_url: str) -> UserSchema:
+        data_dict = {"avatar_url": avatar_url}
+        res = await self.users_repo.update_one(user_id, data_dict)
+        return res
 
     async def authenticate_user(self, data: UserLoginSchema) -> TokenSchema:
         user = await self.users_repo.find_by_email(data.email)
