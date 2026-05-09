@@ -253,21 +253,21 @@ class TestCorps:
         _, other_headers = fresh_user
         cid = client.post("/corps", json={"name": "Keep"}, headers=auth_headers).json()
         r = client.delete(f"/corps/{cid}", headers=other_headers)
-        assert r.status_code == 404  # non-owner doesn't see the corp
+        assert r.status_code == 403  # non-owner not authorized
 
     def test_members_list(self, client, auth_headers, fresh_user):
-        uid, _ = fresh_user
+        _, user_headers = fresh_user
+        uid = client.get("/users/me", headers=user_headers).json()["user_id"]
         cid = client.post("/corps", json={"name": "Team"}, headers=auth_headers).json()
-        # add member
         r = client.post(f"/corps/{cid}/members", json={"user_id": uid}, headers=auth_headers)
         assert r.status_code == 200
-        # list members
         r = client.get(f"/corps/{cid}/members", headers=auth_headers)
         assert r.status_code == 200
         assert uid in r.json()
 
     def test_remove_member(self, client, auth_headers, fresh_user):
-        uid, _ = fresh_user
+        _, user_headers = fresh_user
+        uid = client.get("/users/me", headers=user_headers).json()["user_id"]
         cid = client.post("/corps", json={"name": "RemoveTest"}, headers=auth_headers).json()
         client.post(f"/corps/{cid}/members", json={"user_id": uid}, headers=auth_headers)
         r = client.delete(f"/corps/{cid}/members/{uid}", headers=auth_headers)
