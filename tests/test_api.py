@@ -56,10 +56,10 @@ def auth_headers(auth_token):
 
 
 @pytest.fixture
-def fresh_user():
+def fresh_user(client):
     """Create a fresh user and return (user_id, headers)."""
     data = next_user_data()
-    _ = client.post("/users", json=data)
+    client.post("/users", json=data)
     token = client.post("/users/login", json={"email": data["email"], "password": data["password"]}).json()["access_token"]
     return data, {"Authorization": f"Bearer {token}"}
 
