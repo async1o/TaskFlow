@@ -33,6 +33,9 @@
 <details open>
 <summary><b>🐳 Backend (Docker)</b></summary>
 
+1. Set `DB_HOST=db` in `.env` (matches the Docker Compose service name)
+2. Run:
+
 ```bash
 docker compose up --build
 ```
@@ -43,13 +46,15 @@ docker compose up --build
 <details>
 <summary><b>💻 Backend (local)</b></summary>
 
+1. Set `DB_HOST=localhost` in `.env` (direct connection to your local PostgreSQL)
+2. Make sure PostgreSQL is running on your machine
+3. Run:
+
 ```bash
-cp .env.example .env        # set DB_HOST=localhost
+cp .env.example .env
 uv sync
 uv run python src/main.py
 ```
-
-> Requires PostgreSQL running locally.
 </details>
 
 <details>
@@ -66,11 +71,15 @@ npm run dev
 
 ## 🧪 Testing
 
+1. **Install and start PostgreSQL** on your machine
+2. **Run tests:**
+
 ```bash
 uv run pytest -v
 ```
 
-Tests use a separate database (`.test.env`). Requires PostgreSQL on `localhost`.
+> Tests use a separate database configured in `.test.env` (`DB_HOST=localhost`).
+> The test suite creates the database, resets all tables, and seeds a default user automatically.
 
 ---
 
